@@ -4,109 +4,150 @@
  */
 
 export default function themePalette(theme) {
+    // Octobot brand colors
+    const octobotColors = {
+        // Primary colors
+        hotPink: '#E91E63',
+        midPurple: '#B039D3',
+        bluePurple: '#4527A0',
+
+        // Variations
+        hotPinkLight: '#F48FB1',
+        hotPinkDark: '#C2185B',
+        bluePurpleLight: '#7E57C2',
+        bluePurpleDark: '#311B92',
+
+        // Gradient colors
+        gradientStart: '#E91E63',
+        gradientMid: '#B039D3',
+        gradientEnd: '#4527A0',
+
+        // Neutrals
+        white: '#FFFFFF',
+        lightGray: '#F5F5F5',
+        gray50: '#FAFAFA',
+        gray100: '#F5F5F5',
+        gray200: '#EEEEEE',
+        gray300: '#E0E0E0',
+        gray500: '#9E9E9E',
+        gray600: '#757575',
+        gray700: '#616161',
+        gray900: '#212121'
+    }
+
     return {
         mode: theme?.customization?.navType,
-        transparent: theme.colors?.transparent,
+        transparent: theme.colors?.transparent || 'transparent',
         common: {
-            black: theme.colors?.darkPaper,
-            dark: theme.colors?.darkPrimaryMain
+            black: theme.colors?.darkPaper || '#1A1A1A',
+            dark: octobotColors.bluePurple,
+            white: octobotColors.white
         },
         primary: {
-            light: theme.customization.isDarkMode ? theme.colors?.darkPrimaryLight : theme.colors?.primaryLight,
-            main: theme.colors?.primaryMain,
-            dark: theme.customization.isDarkMode ? theme.colors?.darkPrimaryDark : theme.colors?.primaryDark,
-            200: theme.customization.isDarkMode ? theme.colors?.darkPrimary200 : theme.colors?.primary200,
-            800: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.primary800
+            light: theme.customization.isDarkMode ? octobotColors.hotPinkLight : octobotColors.hotPinkLight,
+            main: octobotColors.hotPink,
+            dark: theme.customization.isDarkMode ? octobotColors.hotPinkDark : octobotColors.hotPinkDark,
+            200: theme.customization.isDarkMode ? '#F06292' : '#F8BBD0',
+            800: theme.customization.isDarkMode ? '#AD1457' : '#E91E63'
         },
         secondary: {
-            light: theme.customization.isDarkMode ? theme.colors?.darkSecondaryLight : theme.colors?.secondaryLight,
-            main: theme.customization.isDarkMode ? theme.colors?.darkSecondaryMain : theme.colors?.secondaryMain,
-            dark: theme.customization.isDarkMode ? theme.colors?.darkSecondaryDark : theme.colors?.secondaryDark,
-            200: theme.colors?.secondary200,
-            800: theme.colors?.secondary800
+            light: theme.customization.isDarkMode ? octobotColors.bluePurpleLight : octobotColors.bluePurpleLight,
+            main: theme.customization.isDarkMode ? octobotColors.midPurple : octobotColors.bluePurple,
+            dark: theme.customization.isDarkMode ? octobotColors.bluePurpleDark : octobotColors.bluePurpleDark,
+            200: '#B39DDB',
+            800: '#4527A0'
         },
         error: {
-            light: theme.colors?.errorLight,
-            main: theme.colors?.errorMain,
-            dark: theme.colors?.errorDark
+            light: '#EF5350',
+            main: '#F44336',
+            dark: '#C62828'
         },
         orange: {
-            light: theme.colors?.orangeLight,
-            main: theme.colors?.orangeMain,
-            dark: theme.colors?.orangeDark
+            light: '#FFB74D',
+            main: '#FF9800',
+            dark: '#F57C00'
         },
         teal: {
-            light: theme.colors?.tealLight,
-            main: theme.colors?.tealMain,
-            dark: theme.colors?.tealDark
+            light: '#4DB6AC',
+            main: '#009688',
+            dark: '#00796B'
         },
         warning: {
-            light: theme.colors?.warningLight,
-            main: theme.colors?.warningMain,
-            dark: theme.colors?.warningDark
+            light: '#FFD54F',
+            main: '#FFC107',
+            dark: '#F57F17'
         },
         success: {
-            light: theme.colors?.successLight,
-            200: theme.colors?.success200,
-            main: theme.colors?.successMain,
-            dark: theme.colors?.successDark
+            light: '#81C784',
+            200: '#A5D6A7',
+            main: '#4CAF50',
+            dark: '#388E3C'
         },
         grey: {
-            50: theme.colors?.grey50,
-            100: theme.colors?.grey100,
-            200: theme.colors?.grey200,
-            300: theme.colors?.grey300,
-            500: theme.darkTextSecondary,
-            600: theme.heading,
-            700: theme.darkTextPrimary,
-            900: theme.textDark
+            50: octobotColors.gray50,
+            100: octobotColors.gray100,
+            200: octobotColors.gray200,
+            300: octobotColors.gray300,
+            500: theme.darkTextSecondary || octobotColors.gray500,
+            600: theme.heading || octobotColors.gray600,
+            700: theme.darkTextPrimary || octobotColors.gray700,
+            900: theme.textDark || octobotColors.gray900
         },
         dark: {
-            light: theme.colors?.darkTextPrimary,
-            main: theme.colors?.darkLevel1,
-            dark: theme.colors?.darkLevel2,
-            800: theme.colors?.darkBackground,
-            900: theme.colors?.darkPaper
+            light: theme.colors?.darkTextPrimary || octobotColors.white,
+            main: theme.colors?.darkLevel1 || '#2C2C2C',
+            dark: theme.colors?.darkLevel2 || '#1A1A1A',
+            800: theme.colors?.darkBackground || '#141414',
+            900: theme.colors?.darkPaper || '#0A0A0A'
         },
         text: {
-            primary: theme.darkTextPrimary,
-            secondary: theme.darkTextSecondary,
-            dark: theme.textDark,
-            hint: theme.colors?.grey100
+            primary: theme.darkTextPrimary || (theme.customization.isDarkMode ? octobotColors.white : octobotColors.gray900),
+            secondary: theme.darkTextSecondary || (theme.customization.isDarkMode ? '#E0E0E0' : octobotColors.gray600),
+            dark: theme.textDark || octobotColors.gray900,
+            hint: theme.colors?.grey100 || (theme.customization.isDarkMode ? '#BDBDBD' : octobotColors.gray500)
         },
         background: {
-            paper: theme.paper,
-            default: theme.backgroundDefault
+            paper: theme.paper || (theme.customization.isDarkMode ? '#1E1E1E' : octobotColors.white),
+            default: theme.backgroundDefault || (theme.customization.isDarkMode ? '#121212' : octobotColors.lightGray)
         },
         textBackground: {
-            main: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.grey50,
-            border: theme.customization.isDarkMode ? theme.colors?.transparent : theme.colors?.grey400
+            main: theme.customization.isDarkMode ? 'rgba(69, 39, 160, 0.08)' : octobotColors.gray50,
+            border: theme.customization.isDarkMode ? 'transparent' : octobotColors.gray300
         },
         card: {
-            main: theme.customization.isDarkMode ? theme.colors?.darkPrimaryMain : theme.colors?.paper,
-            light: theme.customization.isDarkMode ? theme.colors?.darkPrimary200 : theme.colors?.paper,
-            hover: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.paper
+            main: theme.customization.isDarkMode ? '#2C2C2C' : octobotColors.white,
+            light: theme.customization.isDarkMode ? '#3C3C3C' : octobotColors.white,
+            hover: theme.customization.isDarkMode ? 'rgba(233, 30, 99, 0.08)' : 'rgba(233, 30, 99, 0.04)'
         },
         asyncSelect: {
-            main: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.grey50
+            main: theme.customization.isDarkMode ? 'rgba(69, 39, 160, 0.12)' : octobotColors.gray50
         },
         timeMessage: {
-            main: theme.customization.isDarkMode ? theme.colors?.darkLevel2 : theme.colors?.grey200
+            main: theme.customization.isDarkMode ? '#2C2C2C' : octobotColors.gray200
         },
         canvasHeader: {
-            deployLight: theme.colors?.primaryLight,
-            deployDark: theme.colors?.primaryDark,
-            saveLight: theme.colors?.secondaryLight,
-            saveDark: theme.colors?.secondaryDark,
-            settingsLight: theme.colors?.grey300,
-            settingsDark: theme.colors?.grey700
+            deployLight: octobotColors.hotPinkLight,
+            deployDark: octobotColors.hotPinkDark,
+            saveLight: octobotColors.bluePurpleLight,
+            saveDark: octobotColors.bluePurpleDark,
+            settingsLight: octobotColors.gray300,
+            settingsDark: octobotColors.gray700
         },
         codeEditor: {
-            main: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.primaryLight
+            main: theme.customization.isDarkMode ? 'rgba(233, 30, 99, 0.12)' : 'rgba(233, 30, 99, 0.08)'
         },
         nodeToolTip: {
-            background: theme.customization.isDarkMode ? theme.colors?.darkPrimary800 : theme.colors?.paper,
-            color: theme.customization.isDarkMode ? theme.colors?.paper : 'rgba(0, 0, 0, 0.87)'
+            background: theme.customization.isDarkMode ? '#2C2C2C' : octobotColors.white,
+            color: theme.customization.isDarkMode ? octobotColors.white : 'rgba(0, 0, 0, 0.87)'
+        },
+        // Custom gradient for special UI elements
+        gradient: {
+            primary: `linear-gradient(180deg, ${octobotColors.gradientStart} 0%, ${octobotColors.gradientMid} 50%, ${octobotColors.gradientEnd} 100%)`
+        },
+        // Table specific colors
+        table: {
+            header: theme.customization.isDarkMode ? octobotColors.white : octobotColors.gray900,
+            headerSecondary: theme.customization.isDarkMode ? '#E0E0E0' : octobotColors.gray600
         }
     }
 }
