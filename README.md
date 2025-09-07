@@ -1,8 +1,8 @@
 <!-- markdownlint-disable MD030 -->
 
 <p align="center">
-<img src="https://github.com/FlowiseAI/Flowise/blob/main/images/flowise_white.svg#gh-light-mode-only">
-<img src="https://github.com/FlowiseAI/Flowise/blob/main/images/flowise_dark.svg#gh-dark-mode-only">
+<img src="https://github.com/FlowiseAI/Flowise/blob/main/images/DK_OctoBot.png#gh-light-mode-only">
+<img src="https://github.com/FlowiseAI/Flowise/blob/main/images/DK_OctoBot.png#gh-dark-mode-only">
 </p>
 
 <div align="center">

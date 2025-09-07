@@ -168,10 +168,10 @@ export const defaultThemeConfig = {
             time: true
         },
         footer: {
-            textColor: '#303235',
+            textColor: '#ed309d',
             text: 'Powered by',
-            company: 'Flowise',
-            companyLink: 'https://flowiseai.com'
+            company: 'DK - OctoBot',
+            companyLink: 'https://www.facebook.com/ai.octobot'
         }
     }
 }
