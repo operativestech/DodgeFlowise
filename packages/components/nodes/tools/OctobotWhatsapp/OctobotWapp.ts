@@ -7,14 +7,16 @@ import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../
 import * as fs from 'fs'
 import * as path from 'path'
 import FormData from 'form-data'
+import * as os from 'os'
 
 // Constants
 const TOOL_NAME = 'OctobotWappTool'
-const TOOL_DESC = `Send WhatsApp messages via OctobotWapp API.
+const TOOL_DESC = `Send WhatsApp messages or create groups via OctobotWapp API.
 Input parameters:
-- recipients: For phone numbers: comma-separated numbers (e.g., "201110076346,201110076347")
-              For groups: comma-separated group IDs (e.g., "120363123456789012@g.us")
-- text_message: The message text to send`
+- recipients: For messages: comma-separated numbers or group IDs. For group creation: comma-separated participant numbers
+- text_message: For messages: the text to send. For group creation: the group name/subject
+- group_picture_url (optional): URL of the group picture when creating groups`
+
 // Node implementation
 class OctobotWapp_Tools implements INode {
     label: string
@@ -35,7 +37,7 @@ class OctobotWapp_Tools implements INode {
         this.type = 'OctobotWapp'
         this.icon = 'OctobotWapp.svg'
         this.category = 'Communication'
-        this.description = 'Send WhatsApp messages via OctobotWapp API'
+        this.description = 'Send WhatsApp messages or create groups via OctobotWapp API'
         this.baseClasses = [this.type, 'Tool', ...getBaseClasses(OctobotWappTool)]
         this.credential = {
             label: 'Connect Credential',
@@ -80,10 +82,14 @@ class OctobotWapp_Tools implements INode {
                     {
                         label: 'Document Message',
                         name: 'doc'
+                    },
+                    {
+                        label: 'Create Group',
+                        name: 'create_group'
                     }
                 ],
                 default: 'text',
-                description: 'Type of message to send'
+                description: 'Type of message to send or create group'
             },
             {
                 label: 'Recipient Type',
@@ -133,17 +139,6 @@ class OctobotWapp_Tools implements INode {
     }
 
     async init(nodeData: INodeData, _: string, options: ICommonObject): Promise<any> {
-        // Disable tracing if hitting rate limits
-        if (process.env.LANGCHAIN_TRACING_V2 === 'true' && !process.env.DISABLE_TRACING) {
-            // Check if we should disable tracing due to rate limits
-            try {
-                // You can add logic here to track rate limit errors
-            } catch (error) {
-                process.env.LANGCHAIN_TRACING_V2 = 'false'
-                console.warn('Disabling LangChain tracing due to rate limits')
-            }
-        }
-
         const toolName = nodeData.inputs?.toolName as string
         const toolDesc = nodeData.inputs?.toolDesc as string
         const type_message = (nodeData.inputs?.type_message as string) || 'text'
@@ -169,7 +164,7 @@ class OctobotWapp_Tools implements INode {
         }
 
         // Validate media path for non-text messages
-        if (type_message !== 'text' && !media_path) {
+        if (type_message !== 'text' && type_message !== 'create_group' && !media_path) {
             throw new Error(`Media file path is required for ${type_message} messages`)
         }
 
@@ -179,6 +174,25 @@ class OctobotWapp_Tools implements INode {
         }
 
         console.log(`Initializing OctobotWapp tool with device: ${deviceName || 'Unknown Device'}`)
+
+        // Update schema based on message type
+        const schema =
+            type_message === 'create_group'
+                ? z.object({
+                      recipients: z.string().describe('Comma-separated participant phone numbers (e.g., "201110076346,201110076347")'),
+                      text_message: z.string().describe('The group name/subject'),
+                      group_picture_url: z.string().optional().describe('URL of the group picture (optional)')
+                  })
+                : z.object({
+                      recipients: z
+                          .string()
+                          .describe(
+                              type_contact === 'group'
+                                  ? 'Comma-separated group IDs (e.g., "120363123456789012@g.us" or multiple groups)'
+                                  : 'Comma-separated phone numbers (e.g., "201110076346" or "201110076346,201110076347")'
+                          ),
+                      text_message: z.string().describe('The message text to send')
+                  })
 
         return await OctobotWappTool.initialize({
             name: toolName ?? TOOL_NAME,
@@ -192,17 +206,7 @@ class OctobotWapp_Tools implements INode {
             media_path,
             time_to_send,
             timezone,
-            // In the init method, update the schema based on type_contact
-            schema: z.object({
-                recipients: z
-                    .string()
-                    .describe(
-                        type_contact === 'group'
-                            ? 'Comma-separated group IDs (e.g., "120363123456789012@g.us" or multiple groups)'
-                            : 'Comma-separated phone numbers (e.g., "201110076346" or "201110076346,201110076347")'
-                    ),
-                text_message: z.string().describe('The message text to send')
-            })
+            schema
         })
     }
 }
@@ -213,7 +217,7 @@ type OctobotWappToolInput = {
     name: string
     description: string
     apiToken: string
-    device_uuid: string // Changed from deviceUuid
+    device_uuid: string
     deviceName?: string
     apiUrl: string
     type_message: string
@@ -233,8 +237,8 @@ export class OctobotWappTool extends StructuredTool {
     description = TOOL_DESC
     apiToken: string
     device_uuid: string
-    deviceName?: string // Added
-    apiUrl: string // Added
+    deviceName?: string
+    apiUrl: string
     type_message: string
     type_contact: string
     media_path?: string
@@ -248,8 +252,8 @@ export class OctobotWappTool extends StructuredTool {
         this.description = options.description
         this.apiToken = options.apiToken
         this.device_uuid = options.device_uuid
-        this.deviceName = options.deviceName // Added
-        this.apiUrl = options.apiUrl // Added
+        this.deviceName = options.deviceName
+        this.apiUrl = options.apiUrl
         this.type_message = options.type_message
         this.type_contact = options.type_contact
         this.media_path = options.media_path
@@ -264,8 +268,8 @@ export class OctobotWappTool extends StructuredTool {
             description: options.description,
             apiToken: options.apiToken,
             device_uuid: options.device_uuid,
-            deviceName: options.deviceName, // Added
-            apiUrl: options.apiUrl, // Added
+            deviceName: options.deviceName,
+            apiUrl: options.apiUrl,
             type_message: options.type_message,
             type_contact: options.type_contact,
             media_path: options.media_path,
@@ -275,58 +279,96 @@ export class OctobotWappTool extends StructuredTool {
         })
     }
 
-    // Helper method to validate phone numbers
-    private validatePhoneNumber(phone: string): boolean {
-        return /^\d{10,15}$/.test(phone.replace(/\D/g, ''))
-    }
-    // Add this method to the OctobotWappTool class
-    private validateGroupId(groupId: string): boolean {
-        // WhatsApp group IDs typically follow this pattern
-        return /^\d{15,20}@g\.us$/.test(groupId.trim()) || /^\d{15,20}-\d{10}@g\.us$/.test(groupId.trim())
-    }
-    // Helper method to validate file
-    private validateMediaFile(filePath: string): void {
-        if (!fs.existsSync(filePath)) {
-            throw new Error(`Media file not found at path: ${filePath}`)
-        }
+    // Helper to download image from URL
+    private async downloadImage(url: string): Promise<string | null> {
+        try {
+            const response = await axios.get(url, {
+                responseType: 'stream',
+                timeout: 30000
+            })
 
-        const stats = fs.statSync(filePath)
-        const maxSize = 16 * 1024 * 1024 // 16MB WhatsApp limit
+            const tempDir = os.tmpdir()
+            const fileName = `group_picture_${Date.now()}.jpg`
+            const filePath = path.join(tempDir, fileName)
 
-        if (stats.size > maxSize) {
-            throw new Error(`File size (${(stats.size / 1024 / 1024).toFixed(2)}MB) exceeds WhatsApp limit of 16MB`)
-        }
+            const writer = fs.createWriteStream(filePath)
+            response.data.pipe(writer)
 
-        // Optional: Add file type validation
-        const ext = path.extname(filePath).toLowerCase()
-        const validExtensions: { [key: string]: string[] } = {
-            image: ['.jpg', '.jpeg', '.png', '.webp'],
-            video: ['.mp4', '.3gp', '.avi'],
-            doc: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
-        }
-
-        if (this.type_message !== 'text' && validExtensions[this.type_message]) {
-            if (!validExtensions[this.type_message].includes(ext)) {
-                throw new Error(
-                    `Invalid file type ${ext} for ${this.type_message} message. Allowed: ${validExtensions[this.type_message].join(', ')}`
-                )
-            }
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => resolve(filePath))
+                writer.on('error', reject)
+            })
+        } catch (error) {
+            console.error('Failed to download group picture:', error)
+            return null
         }
     }
 
     protected async _call(arg: z.infer<typeof this.schema>, runManager?: CallbackManagerForToolRun): Promise<string> {
         try {
-            // Extract inputs from the schema
+            // Handle group creation
+            if (this.type_message === 'create_group') {
+                const { recipients, text_message, group_picture_url } = arg as any
+
+                const formData = new FormData()
+                formData.append('deviceUuid', this.device_uuid)
+                formData.append('subject', text_message)
+                formData.append('participants', recipients)
+
+                // Handle group picture if URL provided
+                let tempImagePath: string | null = null
+                if (group_picture_url) {
+                    tempImagePath = await this.downloadImage(group_picture_url)
+                    if (tempImagePath) {
+                        const fileStream = fs.createReadStream(tempImagePath)
+                        formData.append('groupPicture', fileStream, path.basename(tempImagePath))
+                    }
+                }
+
+                console.log(`Creating WhatsApp group: ${text_message}`)
+
+                const response = await axios.post('https://api.zentramsg.com/v1/whatsapp/groups/create', formData, {
+                    headers: {
+                        accept: 'application/json',
+                        'x-api-token': this.apiToken,
+                        ...formData.getHeaders()
+                    },
+                    timeout: 60000
+                })
+
+                // Clean up temp file
+                if (tempImagePath) {
+                    try {
+                        fs.unlinkSync(tempImagePath)
+                    } catch (e) {
+                        /* empty */
+                    }
+                }
+
+                if (response.data && response.data.success === true) {
+                    return JSON.stringify({
+                        success: true,
+                        message: `WhatsApp group "${text_message}" created successfully`,
+                        details: response.data.data || response.data
+                    })
+                } else {
+                    return JSON.stringify({
+                        success: false,
+                        error: response.data.msg || 'Failed to create group',
+                        details: response.data
+                    })
+                }
+            }
+
+            // Handle regular messages (existing functionality)
             const { recipients, text_message } = arg
 
-            // Create FormData for the API request
             const formData = new FormData()
             formData.append('device_uuid', this.device_uuid)
             formData.append('type_message', this.type_message)
             formData.append('type_contact', this.type_contact)
             formData.append('ids', recipients)
 
-            // Add scheduling parameters if configured
             if (this.time_to_send) {
                 formData.append('time_to_send', this.time_to_send)
                 if (this.timezone) {
@@ -334,16 +376,13 @@ export class OctobotWappTool extends StructuredTool {
                 }
             }
 
-            // Handle different message types
             if (this.type_message === 'text') {
                 formData.append('text_message', text_message)
             } else {
-                // For media messages, use text_message as caption
                 if (text_message) {
                     formData.append('text_message', text_message)
                 }
 
-                // Add media file
                 if (!this.media_path) {
                     throw new Error(`Media file path is required for ${this.type_message} messages`)
                 }
@@ -359,37 +398,32 @@ export class OctobotWappTool extends StructuredTool {
 
             console.log(`Sending ${this.type_message} message to: ${recipients}`)
 
-            // Execute API call
             const response = await axios.post(this.apiUrl, formData, {
-                // Use this.apiUrl instead of hardcoded URL
                 headers: {
                     'x-api-token': this.apiToken,
                     ...formData.getHeaders()
-                }
+                },
+                timeout: 30000
             })
 
-            // Handle response
             if (response.data && response.data.success === true) {
-                console.log('Message sent successfully')
-                const messageType = this.type_message || 'message'
                 return JSON.stringify({
                     success: true,
-                    message: `${messageType.toUpperCase()} message sent successfully to ${recipients}`,
+                    message: `${this.type_message.toUpperCase()} message sent successfully to ${recipients}`,
                     details: response.data.data
                 })
             } else {
-                console.error('API error response:', response.data)
                 return JSON.stringify({
                     success: false,
                     error: response.data.msg || 'Unknown error',
-                    details: response.data.errors || response.data
+                    details: response.data
                 })
             }
         } catch (error: any) {
             console.error('Error in OctobotWappTool:', error.message)
             return JSON.stringify({
                 success: false,
-                error: error.message,
+                error: error.message || 'An unexpected error occurred',
                 details: error.response?.data || 'No additional details available'
             })
         }
