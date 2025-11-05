@@ -14,7 +14,7 @@
         "build": "turbo run build",
         "build-force": "pnpm clean && turbo run build --force",
         "dev": "turbo run dev --parallel --no-cache",
-        "start": "node packages/server/dist/index.js",
+        "start": "mkdir -p /tmp/flowise/logs && node packages/server/dist/index.js",
         "start:windows": "cd packages/server/bin && run start",
         "start:default": "cd packages/server/bin && ./run start",
         "start-worker": "run-script-os",
